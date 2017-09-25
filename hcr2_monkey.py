@@ -184,7 +184,7 @@ class MonkeyActions:
     rightPedal = (250, 2304)
 
     breakPedal = (330,470)
-    throttlePedal = (1400,660)
+    throttlePedal = (1120,719)
     startAndNext = (1170,630)
     forestLevel = (945,575)
     countrysideLevel = (990,360)
@@ -281,14 +281,21 @@ class MonkeyActions:
         self.device.drag(self.breakPedal, self.breakPedal, time)
 
     def pressThrottle(self, time=1.1):
-        self.device.drag(self.throttlePedal, self.throttlePedal, time)
+        self.device.drag(self.throttlePedal, self.throttlePedal, time, 1)
 
-    def hiirThrottle(self, time, maxTDur, breakT):
+    def hiirThrottle(self, time, maxTDur, breakT, sleepT):
         for i in range(0, int(time/maxTDur)):
             self.pressThrottle(maxTDur)
-            self.pressBreak(breakT)
+            if breakT > 0:
+                self.pressBreak(breakT)
+            if sleepT > 0:
+                sleep(sleepT)
         if time%maxTDur > 0.03:
             self.pressThrottle(time%maxTDur)
+
+    def testHiirThrottle(self):
+        self.hiirThrottle(0.54, 0.25, 0.0, 0.08)
+
 
     def getMainState(self):
         self.lastMainState = self.gameStateDetector.getGameState().getMainState()
@@ -353,20 +360,24 @@ class MonkeyActions:
         #
         # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,12,12
         # 11200/h: 0.60, 0.02, 0.027, 0.20
-        # 02:51:20, 12894 (10800/h): 0.58, 0.02, 0.028, 0.21
         #
-        t, s1, b, s2 = params = 0.57, 0.02, 0.0285, 0.215
+        # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,13,12
+        # 10600: (0.59, 0.3, 0.0, 0.08), 0.0, 0.008, 0.2
+        #
+        t, s1, b, s2 = params = (0.59, 0.30, 0.0, 0.08), 0.0, 0.008, 0.2
 
+        self.pressCountryside()
+        self.pressNextOrStart()
         if not self.printed:
             print params
             self.printed = True
 
-        #self.hiirThrottle(*t)
-        throttleParts = 1
-        for i in range(throttleParts):
-            self.pressCountryside()
-            self.pressNextOrStart()
-            self.pressThrottle(t/throttleParts)
+        self.hiirThrottle(*t)
+        #throttleParts = 1
+        #for i in range(throttleParts):
+        #    self.pressCountryside()
+        #    self.pressNextOrStart()
+        #    self.pressThrottle(t/throttleParts)
         if s1 > 0:
             sleep(s1)
         if b > 0:
@@ -391,9 +402,10 @@ class MonkeyActions:
         menu.addAction("S", "Take screenshot", self.screenshot)
         menu.addAction("MINUS", "Print game state to stdout", self.printCurrentState)
         menu.addAction("P", "Press break", self.pressBreak)
-        menu.addAction("L", "Select level", self.pressForest)
+        menu.addAction("L", "Select level", self.pressCountryside)
         menu.addAction("N", "Press next or start", self.pressNextOrStart)
         menu.addAction("T", "Throttle", self.pressThrottle)
+        menu.addAction("H", "Hiir-throttle", self.testHiirThrottle)
         menu.addAction("B", "Back", self.pressBack)
         menu.addAction("G", "Grind once", self.grindOnce)
         menu.addAction("F", "grind Forever", self.grindForever)
