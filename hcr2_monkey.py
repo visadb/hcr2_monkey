@@ -59,13 +59,6 @@ class ActionMenu:
         self.defaultBackground = self.frame.getBackground()
         self.frame.getContentPane().setLayout(BoxLayout(self.frame.getContentPane(), BoxLayout.Y_AXIS))
 
-        def quit():
-            from java.lang import System
-            print "Quitting..."
-            self.killAllMonkeys()
-            System.exit(0)
-
-        self.addAction("Q", "Quit", quit)
         self.addAction("ESCAPE", "Abort current action", lambda: None)
     def addAction(self, key, desc, cb):
         if " " in key:
@@ -388,6 +381,12 @@ class MonkeyActions:
     def printCurrentState(self):
         print self.gameStateDetector.getGameState()
 
+    def quit(self):
+        from java.lang import System
+        print "Quitting..."
+        self.killAllMonkeys()
+        System.exit(0)
+
     def addMenuActions(self, menu):
         menu.addAction("S", "Take screenshot", self.screenshot)
         menu.addAction("MINUS", "Print game state to stdout", self.printCurrentState)
@@ -398,6 +397,7 @@ class MonkeyActions:
         menu.addAction("B", "Back", self.pressBack)
         menu.addAction("G", "Grind once", self.grindOnce)
         menu.addAction("F", "grind Forever", self.grindForever)
+        menu.addAction("Q", "Quit", self.quit)
 
 def main():
     menu = ActionMenu()
