@@ -6,6 +6,8 @@ from javax.swing import AbstractAction, BoxLayout, JComponent, JFrame, JLabel, K
 from threading import Thread
 import socket
 import os
+import signal
+import sys
 
 
 class MenuAction(AbstractAction):
@@ -60,7 +62,9 @@ class ActionMenu:
         def quit():
             from java.lang import System
             print "Quitting..."
+            self.killAllMonkeys()
             System.exit(0)
+
         self.addAction("Q", "Quit", quit)
         self.addAction("ESCAPE", "Abort current action", lambda: None)
     def addAction(self, key, desc, cb):
@@ -193,11 +197,20 @@ class MonkeyActions:
     countrysideLevel = (990,360)
 
     def __init__(self):
+        signal.signal(signal.SIGINT, self.exitGracefully)
         #self.startMinitouch()
         self.device = MonkeyRunner.waitForConnection(1)
         #self.gameStateDetector = GameStateDetector(self.device)
         #self.connectToMinitouch()
         #self.lastMainState = None
+
+    def exitGracefully(self, signum, frame):
+        signal.signal(signal.SIGINT, signal.getsignal(signal.SIGINT))
+        self.killAllMonkeys()
+        sys.exit(1)
+
+    def killAllMonkeys(self):
+        self.device.shell('killall com.android.commands.monkey')
 
     def startMinitouch(self):
       def threadCode():
