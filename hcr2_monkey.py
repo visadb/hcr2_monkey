@@ -186,13 +186,15 @@ class MonkeyActions:
     breakPedal = (330,470)
     throttlePedal = (1120,719)
     startAndNext = (1170,630)
-    forestLevel = (945,575)
+
     countrysideLevel = (990,360)
+    forestLevel = (945,575)
+    cityLevel = (720,719)
 
     def __init__(self):
         signal.signal(signal.SIGINT, self.exitGracefully)
         #self.startMinitouch()
-        self.device = MonkeyRunner.waitForConnection(1)
+        self.device = MonkeyRunner.waitForConnection(1, "ce061716ad19601e0d7e")
         #self.gameStateDetector = GameStateDetector(self.device)
         #self.connectToMinitouch()
         #self.lastMainState = None
@@ -203,7 +205,10 @@ class MonkeyActions:
         sys.exit(1)
 
     def killAllMonkeys(self):
-        self.device.shell('killall com.android.commands.monkey')
+        try:
+            self.device.shell('killall com.android.commands.monkey')
+        except:
+            print "Error killing monkeys"
 
     def startMinitouch(self):
       def threadCode():
@@ -268,11 +273,14 @@ class MonkeyActions:
         self.device.press("KEYCODE_BACK", MonkeyDevice.DOWN_AND_UP)
         sleep(delayAfter)
 
+    def pressCountryside(self):
+        self.device.touch(self.countrysideLevel[0], self.countrysideLevel[1], MonkeyDevice.DOWN_AND_UP)
+
     def pressForest(self):
         self.device.touch(self.forestLevel[0], self.forestLevel[1], MonkeyDevice.DOWN_AND_UP)
 
-    def pressCountryside(self):
-        self.device.touch(self.countrysideLevel[0], self.countrysideLevel[1], MonkeyDevice.DOWN_AND_UP)
+    def pressCity(self):
+        self.device.touch(self.cityLevel[0], self.cityLevel[1], MonkeyDevice.DOWN_AND_UP)
 
     def pressNextOrStart(self):
         self.device.touch(self.startAndNext[0], self.startAndNext[1], MonkeyDevice.DOWN_AND_UP)
@@ -364,7 +372,10 @@ class MonkeyActions:
         # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,13,12
         # 10600: (0.59, 0.3, 0.0, 0.08), 0.0, 0.008, 0.2
         #
-        t, s1, b, s2 = params = (0.59, 0.30, 0.0, 0.08), 0.0, 0.008, 0.2
+        # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,15,12
+        # 10300 (3min): (0.57, 0.30, 0.0, 0.08), 0.0, 0.010, 0.2
+        # 02:26:30, 1501: (0.57, 0.30, 0.0, 0.09), 0.1, 0.010, 0.2
+        t, s1, b, s2 = params = (0.55, 0.28, 0.0, 0.1), 0.0, 0.017, 0.21
 
         self.pressCountryside()
         self.pressNextOrStart()
@@ -402,7 +413,7 @@ class MonkeyActions:
         menu.addAction("S", "Take screenshot", self.screenshot)
         menu.addAction("MINUS", "Print game state to stdout", self.printCurrentState)
         menu.addAction("P", "Press break", self.pressBreak)
-        menu.addAction("L", "Select level", self.pressCountryside)
+        menu.addAction("L", "Select level", self.pressCity)
         menu.addAction("N", "Press next or start", self.pressNextOrStart)
         menu.addAction("T", "Throttle", self.pressThrottle)
         menu.addAction("H", "Hiir-throttle", self.testHiirThrottle)
