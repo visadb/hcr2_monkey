@@ -185,7 +185,7 @@ class MonkeyActions:
 
     breakPedal = (330,470)
     throttlePedal = (1120,719)
-    startAndNext = (1170,630)
+    startAndNext = (1170,636)
 
     countrysideLevel = (990,360)
     forestLevel = (945,575)
