@@ -50,7 +50,7 @@ class MenuAction(AbstractAction):
 class ActionMenu:
     def __init__(self):
         self.titleBase = 'FF3 Monkey'
-        self.frame = JFrame(self.titleBase, defaultCloseOperation = JFrame.EXIT_ON_CLOSE, size=(400,400))
+        self.frame = JFrame(self.titleBase, defaultCloseOperation = JFrame.EXIT_ON_CLOSE, size=(300,250))
         self.inputMap = self.frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
         self.actionMap = self.frame.getRootPane().getActionMap()
         self.actionLabels = {}
@@ -193,11 +193,19 @@ class MonkeyActions:
 
     def __init__(self):
         signal.signal(signal.SIGINT, self.exitGracefully)
+        self.readParams()
         #self.startMinitouch()
         self.device = MonkeyRunner.waitForConnection(1, "ce061716ad19601e0d7e")
         #self.gameStateDetector = GameStateDetector(self.device)
         #self.connectToMinitouch()
         #self.lastMainState = None
+
+    def readParams(self):
+        params_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'params')
+        f = open(params_file, 'r')
+        self.t, self.s1, self.b, self.s2 = params = eval(f.readline())
+        f.close()
+        print "Read params: %s" % (params,)
 
     def exitGracefully(self, signum, frame):
         signal.signal(signal.SIGINT, signal.getsignal(signal.SIGINT))
@@ -310,93 +318,24 @@ class MonkeyActions:
         return self.lastMainState
 
     def grindOnce(self):
-        # upgrades: 12,10,10,7:
-        # 7800/h: 1.20, 0.10, 0.020, 0.30
-        # 9100/h: 1.30, 0.15, 0.015, 0.25
-        #
-        # upgrades: 12,10,10,8:
-        # 7600/h: 1.00, 0.00, 0.000, 0.00
-        # 8200/h: 0.90, 0.10, 0.000, 0.00
-        # 7400/h: 0.80, 0.20, 0.000, 0.00
-        # 8200/h: 0.70, 0.30, 0.000, 0.00
-        # 8300/h: 0.60, 0.40, 0.000, 0.00
-        # 8100/h: 1.30, 0.15, 0.015, 0.25
-        # 8200/h: 1.20, 0.15, 0.020, 0.25
-        #
-        # upgrades: 1,10,10,9:
-        # 8200/h: 1.0, 0.0, 0.020, 0.2
-        #
-        # upgrades: 12,10,10,11:
-        # 8200/h: 0.60, 0.40, 0.000, 0.00
-        # 8600/h: 2.0, 0.0, 0.015, 0.50
-        # 7800/h: (2.4, 0.9, 0.01), 0.0, 0.02, 0.50
-        # 9100/h: (2.2, 0.7, 0.01), 0.0, 0.05, 0.20
-        #
-        # upgrades: 12,10,10,12:
-        # 7800/h: (2.2, 0.7, 0.01), 0.0, 0.05, 0.20
-        # 7800/h: (2.2, 0.6, 0.008), 0.0, 0.05, 0.20
-        # 8600/h: 1.0, 0.0, 0.01, 0.00
-        #
-        # bus@countryside, wheelie boost, upgrades: 1,1,1,1
-        # 9300/h: 2.0, 0.0, 0.020, 0.00
-        # 9300/h: 2.0, 0.0, 0.025, 0.00
-        # 9000/h: 2.0, 0.0, 0.040, 0.00
-        # 8700/h: 2.2, 0.0, 0.015, 0.00
-        # 7100/h: 1.8, 0.0, 0.030, 0.00
-        # 7000/h: 2.0, 0.0, 0.015, 0.00
-        #
-        # bus@countryside, wheelie boost, upgrades: 1,1,5,1
-        # 9500: 2.0, 0.00, 0.020, 0.00
-        # 9100: 2.0, 0.20, 0.020, 0.00
-        # 9100: 2.0, 0.00, 0.020, 0.20
-        #
-        # bus@countryside, magnet, upgrades: 1,1,5,1
-        # 9500/h: 2.0, 0.00, 0.020, 0.00
-        #
-        # sports car @ coutryside, magnet+weight, upgrades: 12,10,10,12
-        # 9500?/h: 1.0, 0.10, 0.020, 0.10
-        #
-        # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,10,12
-        # 9800/h: 0.5, 0.20, 0.030, 0.20
-        # 23:31:20, 16718: 0.55, 0.15, 0.030, 0.20
-        #
-        #t, s1, b, s2 = params = 0.53, 0.00, 0.037, 0.21 #almost over peak at 1200 (throttleParts=4)
-        #t, s1, b, s2 = params = 0.55, 0.04, 0.036, 0.20 #almost over peak at 1200 (throttleParts=1)
-        #
-        # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,11,12
-        # 11100/h: 0.58, 0.00, 0.026, 0.18 # over peak at 1200 (throttleParts=4)
-        #
-        # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,12,12
-        # 11200/h: 0.60, 0.02, 0.027, 0.20
-        #
-        # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,13,12
-        # 10600: (0.59, 0.3, 0.0, 0.08), 0.0, 0.008, 0.2
-        #
-        # sports car @ coutryside, magnet+rollcage, upgrades: 12,10,15,12
-        # 10300 (3min): (0.57, 0.30, 0.0, 0.08), 0.0, 0.010, 0.2
-        # 02:26:30, 1501: (0.57, 0.30, 0.0, 0.09), 0.1, 0.010, 0.2
-        t, s1, b, s2 = params = (0.55, 0.28, 0.0, 0.1), 0.0, 0.017, 0.21
-
         self.pressCountryside()
         self.pressNextOrStart()
-        if not self.printed:
-            print params
-            self.printed = True
 
-        self.hiirThrottle(*t)
+        self.hiirThrottle(*self.t)
         #throttleParts = 1
         #for i in range(throttleParts):
         #    self.pressCountryside()
         #    self.pressNextOrStart()
         #    self.pressThrottle(t/throttleParts)
-        if s1 > 0:
-            sleep(s1)
-        if b > 0:
-            self.pressBreak(b)
-        if s2 > 0:
-            sleep(s2)
+        if self.s1 > 0:
+            sleep(self.s1)
+        if self.b > 0:
+            self.pressBreak(self.b)
+        if self.s2 > 0:
+            sleep(self.s2)
 
     def grindForever(self):
+        self.readParams()
         while True:
             self.grindOnce()
 
@@ -420,6 +359,7 @@ class MonkeyActions:
         menu.addAction("B", "Back", self.pressBack)
         menu.addAction("G", "Grind once", self.grindOnce)
         menu.addAction("F", "grind Forever", self.grindForever)
+        menu.addAction("R", "Reload params", self.readParams)
         menu.addAction("Q", "Quit", self.quit)
 
 def main():
