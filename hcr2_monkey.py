@@ -30,6 +30,9 @@ class MenuAction(AbstractAction):
             self.parentMenu.actionThread.stop()
             resetParentMenu()
             return
+        if self.parentMenu.actionThread != None and self.key == "R":
+            self.cb()
+            return
         elif self.parentMenu.actionThread != None:
             return
         print "Running action:", self.desc
@@ -49,7 +52,7 @@ class MenuAction(AbstractAction):
 
 class ActionMenu:
     def __init__(self):
-        self.titleBase = 'FF3 Monkey'
+        self.titleBase = 'HCR2 Monkey'
         self.frame = JFrame(self.titleBase, defaultCloseOperation = JFrame.EXIT_ON_CLOSE, size=(300,250))
         self.inputMap = self.frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
         self.actionMap = self.frame.getRootPane().getActionMap()
