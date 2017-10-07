@@ -133,13 +133,15 @@ class GameStateDetector:
     def readDistanceNumber(self, slot, shot):
         rect = self.distanceNumberRects[slot]
         if self.checkSubImage((self.modelBlankNumber, rect, 97.0), shot):
+            #print("Slot %d is blank" % slot)
             return 0
 
         minDissimilarity, minCand = 1e300, 0
         for cand in range(0, 10):
             subImageDetectionSpec = (self.modelNumbers[cand], rect, 95.0)
             dissimilarity, maxDissimilarity, _ = self.imageDissimilarity(subImageDetectionSpec, shot)
-            if dissimilarity/maxDissimilarity < 0.02:
+            if float(dissimilarity)/maxDissimilarity < 0.005:
+                #print("Obvious cand %d for slot %d, %f/%f - %f" % (cand, slot, dissimilarity, maxDissimilarity, float(dissimilarity)/maxDissimilarity))
                 return cand
             if dissimilarity < minDissimilarity:
                 minDissimilarity = dissimilarity
@@ -190,12 +192,13 @@ class GameStateDetector:
 
     def getSubState(self, mainState, shot):
         if mainState == GameState.MAINSTATE_INGAME:
-            return self.readDistance(shot)
+            distance = self.readDistance(shot)
+            return distance
         else:
             return None
 
-    def getGameState(self, shot=None):
-        shot = shot or self.device.takeSnapshot()
+    def getGameState(self):
+        shot = self.device.takeSnapshot()
         mainState = self.getMainState(shot)
 
         return GameState(mainState, self.getSubState(mainState, shot))
@@ -343,7 +346,7 @@ class MonkeyActions:
         self.pressCountryside()
         self.pressNextOrStart()
 
-        self.hiirThrottle(*self.t)
+        self.pressThrottle(self.t)
         #throttleParts = 1
         #for i in range(throttleParts):
         #    self.pressCountryside()
@@ -370,6 +373,14 @@ class MonkeyActions:
         self.killAllMonkeys()
         System.exit(0)
 
+    def readGameStateForever(self):
+        while True:
+            gameState = self.gameStateDetector.getGameState()
+            print(gameState)
+
+    def startReadingGameState(self):
+        Thread(target=self.readGameStateForever).start()
+
     def addMenuActions(self, menu):
         menu.addAction("S", "Take screenshot", self.screenshot)
         menu.addAction("MINUS", "Print game state to stdout", self.printCurrentState)
@@ -388,6 +399,7 @@ def main():
     menu = ActionMenu()
     ma = MonkeyActions()
     ma.addMenuActions(menu)
+    ma.startReadingGameState()
     menu.run()
 
 main()
