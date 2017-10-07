@@ -8,6 +8,7 @@ import socket
 import os
 import signal
 import sys
+import tempfile
 
 
 class MenuAction(AbstractAction):
@@ -88,8 +89,9 @@ class GameState(object):
     MAINSTATE_UNKNOWN  = "main_unknown"
     MAINSTATES = [MAINSTATE_INGAME, MAINSTATE_UNKNOWN]
 
-    def __init__(self, mainState):
+    def __init__(self, mainState, subState=None):
         self.mainState = mainState
+        self.subState = subState
 
     def getMainState(self):
         return self._mainState
@@ -100,7 +102,7 @@ class GameState(object):
     mainState = property(getMainState, setMainState)
 
     def __str__(self):
-        return "GameState(%s)" % (self.mainState,)
+        return "GameState(%s, %s)" % (self.mainState, self.subState)
 
 class GameStateDetector:
     def __init__(self, monkeydevice):
@@ -108,10 +110,14 @@ class GameStateDetector:
 
         # subImageDetectionSpecs: (BufferedImage, (x,y,w,h), requiredSimilarityPercent)
         self.inGameDetection = (self.readImg("in_game_rpm_edge.png"), (484,647,19,4), 99.3)
-        self.numbers = dict()
-        for i in range(0,10):
-            self.endDetection = (self.readImg(str(i)+".png"), (543,921,43,28), 99.8)
-        self.monsterNameYDelta = 90
+        self.distanceNumberRects = [
+                (577, 641, 16, 20),
+                (561, 641, 16, 20),
+                (544, 641, 16, 20),
+                (527, 641, 16, 20),
+                ]
+        self.modelNumbers = [self.readImg(str(i)+".png") for i in range(0,10)]
+        self.modelBlankNumber = self.readImg("blank_num.png")
 
     @staticmethod
     def readImg(filename):
@@ -121,12 +127,33 @@ class GameStateDetector:
         scriptDir = os.path.dirname(sys.argv[0])
         return ImageIO.read(File(os.path.join(scriptDir, "stateDetectionImages", filename)))
 
-    def checkSubImage(self, subImageDetectionSpec, shot=None):
+    def readDistance(self, shot):
+        return sum([self.readDistanceNumber(slot, shot)*10**slot for slot in range(4)])
+
+    def readDistanceNumber(self, slot, shot):
+        rect = self.distanceNumberRects[slot]
+        if self.checkSubImage((self.modelBlankNumber, rect, 97.0), shot):
+            return 0
+
+        minDissimilarity, minCand = 1e300, 0
+        for cand in range(0, 10):
+            subImageDetectionSpec = (self.modelNumbers[cand], rect, 95.0)
+            dissimilarity, maxDissimilarity, _ = self.imageDissimilarity(subImageDetectionSpec, shot)
+            if dissimilarity/maxDissimilarity < 0.02:
+                return cand
+            if dissimilarity < minDissimilarity:
+                minDissimilarity = dissimilarity
+                minCand = cand
+        return minCand
+
+
+    def imageDissimilarity(self, subImageDetectionSpec, shot=None):
         shot = shot or self.device.takeSnapshot()
         imagedata, rect, requiredSimilarityPercent = subImageDetectionSpec
         subImageOnScreen = shot.getSubImage(rect)
 
-        maxAllowedDissimilarity = max(0, rect[2]*rect[3]*0xff*3 * (100.0-requiredSimilarityPercent)/100.0)
+        maxDissimilarity = rect[2]*rect[3]*0xff*3
+        maxAllowedDissimilarity = max(0, maxDissimilarity * (100.0-requiredSimilarityPercent)/100.0)
         dissimilarity = 0
         for y in range(rect[3]):
             for x in range(rect[2]):
@@ -138,6 +165,11 @@ class GameStateDetector:
                 if dissimilarity > maxAllowedDissimilarity:
                     break
         #print "Dissimilarity %.1f/%.1f" % (dissimilarity, maxAllowedDissimilarity)
+        return dissimilarity, maxDissimilarity, maxAllowedDissimilarity
+
+
+    def checkSubImage(self, subImageDetectionSpec, shot=None):
+        dissimilarity, _, maxAllowedDissimilarity = self.imageDissimilarity(subImageDetectionSpec, shot)
         return dissimilarity <= maxAllowedDissimilarity
 
     @staticmethod
@@ -152,19 +184,21 @@ class GameStateDetector:
     def getColorComponent(color, componentNumber):
             return (color & (0xff << (componentNumber*8))) >> (componentNumber*8)
 
-    def getMainState(self, shot=None):
-        shot = shot or self.device.takeSnapshot()
+    def getMainState(self, shot):
         if self.checkSubImage(self.inGameDetection, shot): return GameState.MAINSTATE_INGAME
         else: return GameState.MAINSTATE_UNKNOWN
 
-    def getGameState(self, shot=None):
-        return GameState(self.getMainState())
+    def getSubState(self, mainState, shot):
+        if mainState == GameState.MAINSTATE_INGAME:
+            return self.readDistance(shot)
+        else:
+            return None
 
-class Dir:
-    up = (0, -1)
-    right = (1, 0)
-    down = (0, 1)
-    left = (-1, 0)
+    def getGameState(self, shot=None):
+        shot = shot or self.device.takeSnapshot()
+        mainState = self.getMainState(shot)
+
+        return GameState(mainState, self.getSubState(mainState, shot))
 
 
 class MonkeyActions:
@@ -235,8 +269,6 @@ class MonkeyActions:
 
 
     def screenshot(self):
-        import tempfile
-        import os
         shot = self.device.takeSnapshot()
         filename = strftime("%Y-%m-%d_%H%M%S.png")
         dirPath = os.path.join(tempfile.gettempdir(), "ff3_monkey")
