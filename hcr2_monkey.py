@@ -343,6 +343,9 @@ class MonkeyActions:
         return self.lastMainState
 
     def grindOnce(self):
+        if self.latestGameState is not None and self.latestGameState.mainState == GameState.MAINSTATE_INGAME:
+            print "Yesh, distance = %d" % self.latestGameState.subState
+
         self.pressCountryside()
         self.pressNextOrStart()
 
@@ -375,8 +378,8 @@ class MonkeyActions:
 
     def readGameStateForever(self):
         while True:
-            gameState = self.gameStateDetector.getGameState()
-            print(gameState)
+            self.latestGameState = self.gameStateDetector.getGameState()
+            #print(self.latestGameState)
 
     def startReadingGameState(self):
         Thread(target=self.readGameStateForever).start()
