@@ -84,11 +84,9 @@ class ActionMenu:
             sleep(300)
 
 class GameState(object):
-    MAINSTATE_UPGRADE  = "main_upgrade"
     MAINSTATE_INGAME   = "main_ingame"
-    MAINSTATE_ENDGAME  = "main_end"
     MAINSTATE_UNKNOWN  = "main_unknown"
-    MAINSTATES = [MAINSTATE_UPGRADE, MAINSTATE_INGAME, MAINSTATE_ENDGAME, MAINSTATE_UNKNOWN]
+    MAINSTATES = [MAINSTATE_INGAME, MAINSTATE_UNKNOWN]
 
     def __init__(self, mainState):
         self.mainState = mainState
@@ -105,15 +103,14 @@ class GameState(object):
         return "GameState(%s)" % (self.mainState,)
 
 class GameStateDetector:
-    screenWidth = 1440
-
     def __init__(self, monkeydevice):
         self.device = monkeydevice
 
         # subImageDetectionSpecs: (BufferedImage, (x,y,w,h), requiredSimilarityPercent)
-        self.upgradeDetection = (self.readImg("upgrade_coin_shine.png"), (55,59,26,26), 99.8)
-        self.inGameDetection = (self.readImg("in_game_gas_pump.png"), (50,161,15,13), 99.8)
-        self.endDetection = (self.readImg("end_google_plus_share_part.png"), (543,921,43,28), 99.8)
+        self.inGameDetection = (self.readImg("in_game_rpm_edge.png"), (484,647,19,4), 99.3)
+        self.numbers = dict()
+        for i in range(0,10):
+            self.endDetection = (self.readImg(str(i)+".png"), (543,921,43,28), 99.8)
         self.monsterNameYDelta = 90
 
     @staticmethod
@@ -123,14 +120,6 @@ class GameStateDetector:
         import sys, os
         scriptDir = os.path.dirname(sys.argv[0])
         return ImageIO.read(File(os.path.join(scriptDir, "stateDetectionImages", filename)))
-
-    @staticmethod
-    def horizontalCoordsToScreenshotCoords(coords, origHeight):
-        return (origHeight-coords[1]-1, coords[0])
-
-    @staticmethod
-    def horizontalRectToScreenshotRect(rect):
-        return GameStateDetector.horizontalCoordsToScreenshotCoords((rect[0], rect[1]+rect[3]-1), GameStateDetector.screenWidth) + (rect[3], rect[2])
 
     def checkSubImage(self, subImageDetectionSpec, shot=None):
         shot = shot or self.device.takeSnapshot()
@@ -165,9 +154,7 @@ class GameStateDetector:
 
     def getMainState(self, shot=None):
         shot = shot or self.device.takeSnapshot()
-        if self.checkSubImage(self.upgradeDetection, shot): return GameState.MAINSTATE_UPGRADE
-        elif self.checkSubImage(self.inGameDetection, shot): return GameState.MAINSTATE_INGAME
-        elif self.checkSubImage(self.endDetection, shot): return GameState.MAINSTATE_ENDGAME
+        if self.checkSubImage(self.inGameDetection, shot): return GameState.MAINSTATE_INGAME
         else: return GameState.MAINSTATE_UNKNOWN
 
     def getGameState(self, shot=None):
@@ -199,7 +186,7 @@ class MonkeyActions:
         self.readParams()
         #self.startMinitouch()
         self.device = MonkeyRunner.waitForConnection(1, "ce061716ad19601e0d7e")
-        #self.gameStateDetector = GameStateDetector(self.device)
+        self.gameStateDetector = GameStateDetector(self.device)
         #self.connectToMinitouch()
         #self.lastMainState = None
 
