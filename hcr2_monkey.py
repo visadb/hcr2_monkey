@@ -4,12 +4,15 @@ from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from java.awt import Color
 from javax.swing import AbstractAction, BoxLayout, JComponent, JFrame, JLabel, KeyStroke
 from threading import Thread
+from datetime import datetime, timedelta
 import socket
 import os
 import signal
 import sys
 import tempfile
 
+def total_seconds(td):
+    return td.seconds + td.microseconds/1e6
 
 class MenuAction(AbstractAction):
     def __init__(self, cb, key, desc, parentMenu):
@@ -89,9 +92,10 @@ class GameState(object):
     MAINSTATE_UNKNOWN  = "main_unknown"
     MAINSTATES = [MAINSTATE_INGAME, MAINSTATE_UNKNOWN]
 
-    def __init__(self, mainState, subState=None):
+    def __init__(self, mainState, subState, timestamp):
         self.mainState = mainState
         self.subState = subState
+        self.timestamp = timestamp
 
     def getMainState(self):
         return self._mainState
@@ -102,7 +106,7 @@ class GameState(object):
     mainState = property(getMainState, setMainState)
 
     def __str__(self):
-        return "GameState(%s, %s)" % (self.mainState, self.subState)
+        return "GameState(%s, %s, %s)" % (self.mainState, self.subState, self.timestamp)
 
 class GameStateDetector:
     def __init__(self, monkeydevice):
@@ -198,10 +202,11 @@ class GameStateDetector:
             return None
 
     def getGameState(self):
+        timestamp = datetime.now()
         shot = self.device.takeSnapshot()
         mainState = self.getMainState(shot)
 
-        return GameState(mainState, self.getSubState(mainState, shot))
+        return GameState(mainState, self.getSubState(mainState, shot), timestamp)
 
 
 class MonkeyActions:
@@ -224,6 +229,8 @@ class MonkeyActions:
         #self.startMinitouch()
         self.device = MonkeyRunner.waitForConnection(1, "ce061716ad19601e0d7e")
         self.gameStateDetector = GameStateDetector(self.device)
+        self.gameStateHistory = []
+        self.lastBoost = datetime.now()
         #self.connectToMinitouch()
         #self.lastMainState = None
 
@@ -231,8 +238,9 @@ class MonkeyActions:
         params_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'params')
         f = open(params_file, 'r')
         self.t, self.s1, self.b, self.s2 = params = eval(f.readline())
+        self.stuckCutoffTime, self.stuckBoostTime, self.boostMinInterval = stuckParams = eval(f.readline())
         f.close()
-        print "Read params: %s" % (params,)
+        print "Read params: %s, %s" % (params, stuckParams)
 
     def exitGracefully(self, signum, frame):
         signal.signal(signal.SIGINT, signal.getsignal(signal.SIGINT))
@@ -342,12 +350,30 @@ class MonkeyActions:
         self.lastMainState = self.gameStateDetector.getGameState().getMainState()
         return self.lastMainState
 
-    def grindOnce(self):
-        if self.latestGameState is not None and self.latestGameState.mainState == GameState.MAINSTATE_INGAME:
-            print "Yesh, distance = %d" % self.latestGameState.subState
 
+    def grindOnce(self):
         self.pressCountryside()
         self.pressNextOrStart()
+
+        if len(self.gameStateHistory) > 0:
+            latestGameStates = self.gameStateHistory[-20:]
+            latestGameState = latestGameStates[-1]
+            print("%s: %s" % (latestGameState.timestamp, latestGameState.subState))
+            if latestGameState.mainState == GameState.MAINSTATE_INGAME and latestGameState.subState > 0:
+
+                cutoffTime = datetime.now() - timedelta(seconds=self.stuckCutoffTime)
+                sameDistanceSinceCutoffTime = [state.mainState == GameState.MAINSTATE_INGAME and state.subState == latestGameState.subState
+                    for state in latestGameStates
+                    if state.timestamp > cutoffTime]
+                stuck = len(sameDistanceSinceCutoffTime) > 1 and all(sameDistanceSinceCutoffTime)
+                if stuck:
+                    seconds_since_last_boost = total_seconds(datetime.now() - self.lastBoost)
+                    if seconds_since_last_boost > self.boostMinInterval:
+                        print "Stuck, BOOST!"
+                        self.lastBoost = datetime.now()
+                        self.pressThrottle(self.stuckBoostTime)
+                    else:
+                        print "Skipping boost as only %0.2fs / %0.2fs since last boost" % (seconds_since_last_boost, self.boostMinInterval)
 
         self.pressThrottle(self.t)
         #throttleParts = 1
@@ -378,8 +404,11 @@ class MonkeyActions:
 
     def readGameStateForever(self):
         while True:
-            self.latestGameState = self.gameStateDetector.getGameState()
-            #print(self.latestGameState)
+            self.gameStateHistory.append(self.gameStateDetector.getGameState())
+            size = len(self.gameStateHistory)
+            if size > 100:
+                self.gameStateHistory = self.gameStateHistory[(size-50):]
+            #print(self.gameStateHistory)
 
     def startReadingGameState(self):
         Thread(target=self.readGameStateForever).start()
