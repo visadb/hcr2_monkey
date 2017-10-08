@@ -237,10 +237,21 @@ class MonkeyActions:
     def readParams(self):
         params_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'params')
         f = open(params_file, 'r')
-        self.t, self.s1, self.b, self.s2 = params = eval(f.readline())
         self.stuckCutoffTime, self.stuckBoostTime, self.boostMinInterval = stuckParams = eval(f.readline())
+        num_of_param_lines = int(f.readline())
+        self.params = []
+        for i in range(num_of_param_lines):
+            paramtuple = eval(f.readline())
+            if len(paramtuple) != 5:
+                raise SyntaxError()
+            self.params.append(paramtuple)
         f.close()
-        print "Read params: %s, %s" % (params, stuckParams)
+        print "Read params: %s, %s" % (stuckParams, self.params)
+
+    def getParams(self, distance):
+        for i in range(len(self.params) - 1, -1, -1):
+            if distance >= self.params[i][0]:
+                return self.params[i][1:]
 
     def exitGracefully(self, signum, frame):
         signal.signal(signal.SIGINT, signal.getsignal(signal.SIGINT))
@@ -355,38 +366,53 @@ class MonkeyActions:
         self.pressCountryside()
         self.pressNextOrStart()
 
-        if len(self.gameStateHistory) > 0:
-            latestGameStates = self.gameStateHistory[-20:]
+        latestGameStates = self.gameStateHistory[-20:]
+        if len(latestGameStates) == 0:
+            self.pressCountryside()
+            self.pressNextOrStart()
+            self.pressThrottle(1.0)
+            return
+        elif latestGameStates[-1].mainState == GameState.MAINSTATE_UNKNOWN:
+            print("Unknown state...")
+            self.pressCountryside()
+            sleep(0.1)
+            self.pressNextOrStart()
+            sleep(0.1)
+            self.pressNextOrStart()
+            sleep(0.1)
+        elif latestGameStates[-1].mainState == GameState.MAINSTATE_INGAME:
             latestGameState = latestGameStates[-1]
             print("%s: %s" % (latestGameState.timestamp, latestGameState.subState))
-            if latestGameState.mainState == GameState.MAINSTATE_INGAME and latestGameState.subState > 0:
 
-                cutoffTime = datetime.now() - timedelta(seconds=self.stuckCutoffTime)
-                sameDistanceSinceCutoffTime = [state.mainState == GameState.MAINSTATE_INGAME and state.subState == latestGameState.subState
-                    for state in latestGameStates
-                    if state.timestamp > cutoffTime]
-                stuck = len(sameDistanceSinceCutoffTime) > 1 and all(sameDistanceSinceCutoffTime)
-                if stuck:
-                    seconds_since_last_boost = total_seconds(datetime.now() - self.lastBoost)
-                    if seconds_since_last_boost > self.boostMinInterval:
-                        print "Stuck, BOOST!"
-                        self.lastBoost = datetime.now()
-                        self.pressThrottle(self.stuckBoostTime)
-                    else:
-                        print "Skipping boost as only %0.2fs / %0.2fs since last boost" % (seconds_since_last_boost, self.boostMinInterval)
+            self.boostIfStuckAssumingInGame(latestGameStates)
 
-        self.pressThrottle(self.t)
-        #throttleParts = 1
-        #for i in range(throttleParts):
-        #    self.pressCountryside()
-        #    self.pressNextOrStart()
-        #    self.pressThrottle(t/throttleParts)
-        if self.s1 > 0:
-            sleep(self.s1)
-        if self.b > 0:
-            self.pressBreak(self.b)
-        if self.s2 > 0:
-            sleep(self.s2)
+            t, s1, b, s2 = params = self.getParams(latestGameState.subState)
+            #print("Using params %s" % (params,))
+            self.pressThrottle(t)
+            if s1 > 0:
+                sleep(s1)
+            if b > 0:
+                self.pressBreak(b)
+            if s2 > 0:
+                sleep(s2)
+
+    def boostIfStuckAssumingInGame(self, latestGameStates):
+        latestGameState = latestGameStates[-1]
+        if latestGameState.subState == 0:
+            return
+        cutoffTime = datetime.now() - timedelta(seconds=self.stuckCutoffTime)
+        sameDistanceSinceCutoffTime = [state.mainState == GameState.MAINSTATE_INGAME and state.subState == latestGameState.subState
+            for state in latestGameStates
+            if state.timestamp > cutoffTime]
+        stuck = len(sameDistanceSinceCutoffTime) > 1 and all(sameDistanceSinceCutoffTime)
+        if stuck:
+            seconds_since_last_boost = total_seconds(datetime.now() - self.lastBoost)
+            if seconds_since_last_boost > self.boostMinInterval:
+                print "Stuck, BOOST!"
+                self.lastBoost = datetime.now()
+                self.pressThrottle(self.stuckBoostTime)
+            else:
+                print "Skipping boost as only %0.2fs / %0.2fs since last boost" % (seconds_since_last_boost, self.boostMinInterval)
 
     def grindForever(self):
         self.readParams()
