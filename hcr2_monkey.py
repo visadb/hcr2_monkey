@@ -238,10 +238,12 @@ class MonkeyActions:
         params_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'params')
         f = open(params_file, 'r')
         self.stuckCutoffTime, self.stuckBoostTime, self.boostMinInterval = stuckParams = eval(f.readline())
-        num_of_param_lines = int(f.readline())
         self.params = []
-        for i in range(num_of_param_lines):
-            paramtuple = eval(f.readline())
+        while True:
+            line = f.readline()
+            if len(line.strip()) == 0:
+                break
+            paramtuple = eval(line)
             if len(paramtuple) != 5:
                 raise SyntaxError()
             self.params.append(paramtuple)
@@ -375,9 +377,6 @@ class MonkeyActions:
         elif latestGameStates[-1].mainState == GameState.MAINSTATE_UNKNOWN:
             print("Unknown state...")
             self.pressCountryside()
-            sleep(0.1)
-            self.pressNextOrStart()
-            sleep(0.1)
             self.pressNextOrStart()
             sleep(0.1)
         elif latestGameStates[-1].mainState == GameState.MAINSTATE_INGAME:
