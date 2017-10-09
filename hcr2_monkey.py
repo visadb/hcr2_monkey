@@ -435,6 +435,9 @@ class MonkeyActions:
         while True:
             self.gameStateHistory.append(self.gameStateDetector.getGameState())
             size = len(self.gameStateHistory)
+            if size >= 2 and self.gameStateHistory[-2].mainState == GameState.MAINSTATE_INGAME and self.gameStateHistory[-1].mainState == GameState.MAINSTATE_UNKNOWN:
+                print "Died at %d" % self.gameStateHistory[-2].subState
+
             if size > 100:
                 self.gameStateHistory = self.gameStateHistory[(size-50):]
             #print(self.gameStateHistory)
