@@ -439,8 +439,9 @@ class MonkeyActions:
 
     def readGameStateForever(self):
         while True:
+            newState = self.gameStateDetector.getGameState()
             self.gameStateHistoryLock.acquire()
-            self.gameStateHistory.append(self.gameStateDetector.getGameState())
+            self.gameStateHistory.append(newState)
             self.gameStateHistoryLock.release()
             size = len(self.gameStateHistory)
             if size > 100:
