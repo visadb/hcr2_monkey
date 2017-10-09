@@ -3,7 +3,7 @@ from time import sleep, strftime, time
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 from java.awt import Color
 from javax.swing import AbstractAction, BoxLayout, JComponent, JFrame, JLabel, KeyStroke
-from threading import Thread
+from threading import Thread, Lock
 from datetime import datetime, timedelta
 import socket
 import os
@@ -233,6 +233,7 @@ class MonkeyActions:
         self.device = MonkeyRunner.waitForConnection(1, "ce061716ad19601e0d7e")
         self.gameStateDetector = GameStateDetector(self.device)
         self.gameStateHistory = []
+        self.gameStateHistoryLock = Lock()
         self.lastParams = ()
         self.lastBoost = datetime.now()
         #self.connectToMinitouch()
@@ -372,7 +373,9 @@ class MonkeyActions:
         self.pressCountryside()
         self.pressNextOrStart()
 
+        self.gameStateHistoryLock.acquire()
         latestGameStates = self.gameStateHistory[-20:]
+        self.gameStateHistoryLock.release()
         if len(latestGameStates) == 0:
             self.pressCountryside()
             self.pressNextOrStart()
@@ -436,13 +439,17 @@ class MonkeyActions:
 
     def readGameStateForever(self):
         while True:
+            self.gameStateHistoryLock.acquire()
             self.gameStateHistory.append(self.gameStateDetector.getGameState())
+            self.gameStateHistoryLock.release()
             size = len(self.gameStateHistory)
+            if size > 100:
+                self.gameStateHistoryLock.acquire()
+                self.gameStateHistory = self.gameStateHistory[(size-50):]
+                self.gameStateHistoryLock.release()
             if size >= 2 and self.gameStateHistory[-2].mainState == GameState.MAINSTATE_INGAME and self.gameStateHistory[-1].mainState == GameState.MAINSTATE_UNKNOWN:
                 log("Died at %d" % (self.gameStateHistory[-2].subState,))
 
-            if size > 100:
-                self.gameStateHistory = self.gameStateHistory[(size-50):]
             #log(self.gameStateHistory)
 
     def startReadingGameState(self):
