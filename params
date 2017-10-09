@@ -1,15 +1,15 @@
 3.2, 1.8, 4.0
-   0, 0.20, 0.00, 0.000, 0.00
+   0, 0.20, 0.02, 0.000, 0.00
   30, 0.60, 0.03, 0.044, 0.12
  160, 0.65, 0.03, 0.038, 0.12 # after first bridge
- 270, 0.68, 0.03, 0.039, 0.15
- 630, 0.73, 0.03, 0.040, 0.12 # after a bridge
+ 270, 0.67, 0.03, 0.039, 0.15
+ 630, 0.72, 0.03, 0.040, 0.12 # after a bridge
 1020, 0.90, 0.03, 0.081, 0.24 # before big drop -> hiir
-1100, 1.14, 0.03, 0.058, 0.18 # before 1st big climb
+1100, 1.13, 0.03, 0.059, 0.18 # before 1st big climb
 1230, 1.23, 0.03, 0.064, 0.23 # before 2nd big climb
 1290, 1.01, 0.03, 0.066, 0.20 # after 2nd big climb
-1370, 1.32, 0.03, 0.022, 0.20 # running out of fuel, need to risk it
-1440, 1.25, 0.03, 0.060, 0.15
+1370, 1.31, 0.03, 0.023, 0.25 # running out of fuel, need to risk it
+1420, 1.00, 0.03, 0.080, 0.15 # drop -> hiir
 
 sports car @ coutryside, magnet(6)+weight(7)+cage(5?), upgrades: 20,20,20,19
 03:42:00, 86159
