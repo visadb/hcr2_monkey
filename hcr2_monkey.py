@@ -230,6 +230,7 @@ class MonkeyActions:
         self.device = MonkeyRunner.waitForConnection(1, "ce061716ad19601e0d7e")
         self.gameStateDetector = GameStateDetector(self.device)
         self.gameStateHistory = []
+        self.lastParams = ()
         self.lastBoost = datetime.now()
         #self.connectToMinitouch()
         #self.lastMainState = None
@@ -386,6 +387,9 @@ class MonkeyActions:
             self.boostIfStuckAssumingInGame(latestGameStates)
 
             t, s1, b, s2 = params = self.getParams(latestGameState.subState)
+            if params != self.lastParams:
+                print "Params changed: %s" % (params,)
+                self.lastParams = params
             #print("Using params %s" % (params,))
             self.pressThrottle(t)
             if s1 > 0:
