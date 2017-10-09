@@ -11,6 +11,9 @@ import signal
 import sys
 import tempfile
 
+def log(msg):
+    print("%s: %s" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg))
+
 def total_seconds(td):
     return td.seconds + td.microseconds/1e6
 
@@ -39,7 +42,7 @@ class MenuAction(AbstractAction):
             return
         elif self.parentMenu.actionThread != None:
             return
-        print "Running action:", self.desc
+        log("Running action: %s" % self.desc)
         self.parentMenu.frame.title = self.parentMenu.titleBase+", "+self.desc+"..."
         label = self.parentMenu.actionLabels[self.key]
         label.setBackground(Color.red)
@@ -48,7 +51,7 @@ class MenuAction(AbstractAction):
             try:
                 self.cb()
             except ThreadDeath:
-                print "Action aborted:", self.desc
+                log("Action aborted: %s" % self.desc)
             finally:
                 resetParentMenu()
         self.parentMenu.actionThread = Thread(runCbAndResetMenu)
@@ -82,7 +85,7 @@ class ActionMenu:
         self.actionLabels[key].setOpaque(True)
         self.frame.getContentPane().add(self.actionLabels[key])
     def run(self):
-        print "Starting menu"
+        log("Starting menu")
         self.frame.visible = True
         while True:
             sleep(300)
@@ -137,7 +140,7 @@ class GameStateDetector:
     def readDistanceNumber(self, slot, shot):
         rect = self.distanceNumberRects[slot]
         if self.checkSubImage((self.modelBlankNumber, rect, 97.0), shot):
-            #print("Slot %d is blank" % slot)
+            #log("Slot %d is blank" % slot)
             return 0
 
         minDissimilarity, minCand = 1e300, 0
@@ -145,7 +148,7 @@ class GameStateDetector:
             subImageDetectionSpec = (self.modelNumbers[cand], rect, 95.0)
             dissimilarity, maxDissimilarity, _ = self.imageDissimilarity(subImageDetectionSpec, shot)
             if float(dissimilarity)/maxDissimilarity < 0.005:
-                #print("Obvious cand %d for slot %d, %f/%f - %f" % (cand, slot, dissimilarity, maxDissimilarity, float(dissimilarity)/maxDissimilarity))
+                #log("Obvious cand %d for slot %d, %f/%f - %f" % (cand, slot, dissimilarity, maxDissimilarity, float(dissimilarity)/maxDissimilarity))
                 return cand
             if dissimilarity < minDissimilarity:
                 minDissimilarity = dissimilarity
@@ -166,11 +169,11 @@ class GameStateDetector:
                 #screenshotCoords = self.horizontalCoordsToScreenshotCoords((x,y), rect[3])
                 screenPixel = subImageOnScreen.getRawPixelInt(x,y) & 0xffffff
                 subImagePixel = imagedata.getRGB(x,y) & 0xffffff
-                #print "comparing image %s 0x%x with screen %s 0x%x" % ((x,y), subImagePixel, screenshotCoords, screenPixel)
+                #log("comparing image %s 0x%x with screen %s 0x%x" % ((x,y), subImagePixel, screenshotCoords, screenPixel))
                 dissimilarity += self.getPixelDissimilarity(screenPixel, subImagePixel)
                 if dissimilarity > maxAllowedDissimilarity:
                     break
-        #print "Dissimilarity %.1f/%.1f" % (dissimilarity, maxAllowedDissimilarity)
+        #log("Dissimilarity %.1f/%.1f" % (dissimilarity, maxAllowedDissimilarity))
         return dissimilarity, maxDissimilarity, maxAllowedDissimilarity
 
 
@@ -249,7 +252,7 @@ class MonkeyActions:
                 raise SyntaxError()
             self.params.append(paramtuple)
         f.close()
-        print "Read params: %s, %s" % (stuckParams, self.params)
+        log("Read params: %s, %s" % (stuckParams, self.params))
 
     def getParams(self, distance):
         for i in range(len(self.params) - 1, -1, -1):
@@ -265,7 +268,7 @@ class MonkeyActions:
         try:
             self.device.shell('killall com.android.commands.monkey')
         except:
-            print "Error killing monkeys"
+            log("Error killing monkeys")
 
     def startMinitouch(self):
       def threadCode():
@@ -301,7 +304,7 @@ class MonkeyActions:
         if not os.path.exists(dirPath):
             os.mkdir(dirPath)
 
-        print "Writing screenshot to", pathToFile
+        log("Writing screenshot to", pathToFile)
         shot.writeToFile(pathToFile)
 
     def touch_down(self, contact, coords):
@@ -376,21 +379,21 @@ class MonkeyActions:
             self.pressThrottle(1.0)
             return
         elif latestGameStates[-1].mainState == GameState.MAINSTATE_UNKNOWN:
-            print("Unknown state...")
+            log("Unknown state...")
             self.pressCountryside()
             self.pressNextOrStart()
             sleep(0.1)
         elif latestGameStates[-1].mainState == GameState.MAINSTATE_INGAME:
             latestGameState = latestGameStates[-1]
-            print("%s: %s" % (latestGameState.timestamp, latestGameState.subState))
+            log(latestGameState.subState)
 
             self.boostIfStuckAssumingInGame(latestGameStates)
 
             t, s1, b, s2 = params = self.getParams(latestGameState.subState)
             if params != self.lastParams:
-                print "Params changed: %s" % (params,)
+                log("Params changed: %s" % (params,))
                 self.lastParams = params
-            #print("Using params %s" % (params,))
+            #log("Using params %s" % (params,))
             self.pressThrottle(t)
             if s1 > 0:
                 sleep(s1)
@@ -411,11 +414,11 @@ class MonkeyActions:
         if stuck:
             seconds_since_last_boost = total_seconds(datetime.now() - self.lastBoost)
             if seconds_since_last_boost > self.boostMinInterval:
-                print "Stuck, BOOST!"
+                log("Stuck, BOOST!")
                 self.lastBoost = datetime.now()
                 self.pressThrottle(self.stuckBoostTime)
             else:
-                print "Skipping boost as only %0.2fs / %0.2fs since last boost" % (seconds_since_last_boost, self.boostMinInterval)
+                log("Skipping boost as only %0.2fs / %0.2fs since last boost" % (seconds_since_last_boost, self.boostMinInterval))
 
     def grindForever(self):
         self.readParams()
@@ -423,11 +426,11 @@ class MonkeyActions:
             self.grindOnce()
 
     def printCurrentState(self):
-        print self.gameStateDetector.getGameState()
+        log(self.gameStateDetector.getGameState())
 
     def quit(self):
         from java.lang import System
-        print "Quitting..."
+        log("Quitting...")
         self.killAllMonkeys()
         System.exit(0)
 
@@ -436,11 +439,11 @@ class MonkeyActions:
             self.gameStateHistory.append(self.gameStateDetector.getGameState())
             size = len(self.gameStateHistory)
             if size >= 2 and self.gameStateHistory[-2].mainState == GameState.MAINSTATE_INGAME and self.gameStateHistory[-1].mainState == GameState.MAINSTATE_UNKNOWN:
-                print "Died at %d" % self.gameStateHistory[-2].subState
+                log("Died at %d" % (self.gameStateHistory[-2].subState,))
 
             if size > 100:
                 self.gameStateHistory = self.gameStateHistory[(size-50):]
-            #print(self.gameStateHistory)
+            #log(self.gameStateHistory)
 
     def startReadingGameState(self):
         Thread(target=self.readGameStateForever).start()
