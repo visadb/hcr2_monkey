@@ -16,8 +16,8 @@
 1291, 0.65, 0.03, 0.105, 0.30 # hiir due to drop
 1376, 1.60, 0.03, 0.064, 0.30 # running out of fuel, need to risk it
 1395, 1.60, 0.03, 0.043, 0.25 # running out of fuel, need to risk it
-1427, 0.90, 0.03, 0.090, 0.20 # drop -> hiir
-1490, 1.20, 0.03, 0.070, 0.25
+1427, 0.60, 0.03, 0.050, 0.20 # drop -> hiir
+1470, 1.20, 0.03, 0.070, 0.25
 1525, 1.00, 0.03, 0.045, 0.20 # a drop coming up...
 1600, 1.30, 0.03, 0.045, 0.20 # running out of fuel again...
 1685, 1.10, 0.03, 0.065, 0.20 # running out of fuel again...
