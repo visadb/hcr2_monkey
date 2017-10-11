@@ -1,20 +1,23 @@
 3.2, 1.2, 4.0
    0, 0.20, 0.02, 0.000, 0.00
   80, 0.10, 0.03, 0.042, 0.40 # first bridge coming up
- 150, 1.00, 0.03, 0.080, 0.15 # after first bridge
- 340, 0.90, 0.03, 0.086, 0.15 # third bridge coming up
- 400, 0.95, 0.03, 0.080, 0.15
- 920, 1.00, 0.03, 0.080, 0.15
-1040, 0.85, 0.03, 0.085, 0.24 # before big drop -> hiir
+ 150, 0.90, 0.03, 0.085, 0.15 # after first bridge
+ 340, 0.80, 0.03, 0.089, 0.20 # third bridge coming up
+ 400, 0.95, 0.03, 0.085, 0.15 # after bridge, risk of wheeling
+ 450, 0.92, 0.03, 0.089, 0.20
+ 595, 0.70, 0.03, 0.063, 0.25 # bridge coming up, less break
+ 630, 0.90, 0.03, 0.080, 0.20
+ 920, 0.95, 0.03, 0.084, 0.15
+1030, 0.85, 0.03, 0.085, 0.24 # before big drop -> hiir
 1100, 1.19, 0.03, 0.056, 0.18 # before 1st big climb
-1165, 0.90, 0.03, 0.070, 0.18 # after 1st big climb (drop)
-1195, 1.10, 0.03, 0.065, 0.18 # after 1st big climb (drop)
+1165, 0.86, 0.03, 0.070, 0.18 # after 1st big climb (drop)
+1198, 1.08, 0.03, 0.070, 0.18
 1230, 1.46, 0.03, 0.052, 0.23 # before 2nd big climb
-1291, 0.93, 0.03, 0.080, 0.20 # hiir due to drop
-1375, 1.50, 0.03, 0.064, 0.30 # running out of fuel, need to risk it
-1395, 1.69, 0.03, 0.040, 0.25 # running out of fuel, need to risk it
+1291, 0.88, 0.03, 0.093, 0.20 # hiir due to drop
+1377, 1.50, 0.03, 0.064, 0.30 # running out of fuel, need to risk it
+1395, 1.65, 0.03, 0.042, 0.25 # running out of fuel, need to risk it
 1427, 0.90, 0.03, 0.090, 0.20 # drop -> hiir
-1490, 1.20, 0.03, 0.066, 0.20
+1490, 1.20, 0.03, 0.068, 0.20
 1540, 1.00, 0.03, 0.045, 0.20 # a drop coming up...
 1600, 1.30, 0.03, 0.050, 0.20 # running out of fuel again...
 1685, 1.10, 0.03, 0.065, 0.20 # running out of fuel again...
