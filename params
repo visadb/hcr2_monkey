@@ -1,20 +1,21 @@
 3.2, 1.5, 4.0
    0, 0.20, 0.02, 0.000, 0.00
   80, 0.10, 0.03, 0.040, 0.40 # first bridge coming up
- 150, 0.59, 0.03, 0.040, 0.15 # after first bridge
+ 150, 0.65, 0.03, 0.040, 0.15 # after first bridge
  270, 0.70, 0.03, 0.042, 0.15
  630, 0.80, 0.03, 0.043, 0.12 # after a bridge
- 920, 0.67, 0.03, 0.046, 0.15
+ 920, 0.68, 0.03, 0.046, 0.15
 1030, 0.88, 0.03, 0.083, 0.24 # before big drop -> hiir
 1100, 1.19, 0.03, 0.056, 0.18 # before 1st big climb
 1165, 0.90, 0.03, 0.070, 0.18 # after 1st big climb (drop)
-1235, 1.46, 0.03, 0.050, 0.23 # before 2nd big climb
-1295, 1.07, 0.03, 0.064, 0.20 # after 2nd big climb
-1330, 1.20, 0.03, 0.055, 0.20 # after 2nd big climb
-1375, 1.31, 0.03, 0.060, 0.25 # running out of fuel, need to risk it
-1395, 1.70, 0.03, 0.035, 0.23 # running out of fuel, need to risk it
+1230, 1.46, 0.03, 0.052, 0.23 # before 2nd big climb
+1292, 1.07, 0.03, 0.064, 0.20 # after 2nd big climb
+1330, 1.20, 0.03, 0.060, 0.20
+1375, 1.33, 0.03, 0.064, 0.30 # running out of fuel, need to risk it
+1395, 1.69, 0.03, 0.035, 0.23 # running out of fuel, need to risk it
 1430, 0.94, 0.03, 0.087, 0.20 # drop -> hiir
 1490, 1.16, 0.03, 0.058, 0.20
+1600, 1.25, 0.03, 0.045, 0.20 # running out of fuel again...
 1800, 1.10, 0.03, 0.052, 0.20 # before bridge -> less break
 1860, 1.30, 0.03, 0.050, 0.20 # before big climb
 1920, 1.10, 0.03, 0.064, 0.20 # after big climb
