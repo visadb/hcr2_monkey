@@ -10,6 +10,9 @@ import os
 import signal
 import sys
 import tempfile
+import platform
+
+on_mac_os = 'Mac_OS' in platform.platform()
 
 def log(msg):
     print("%s: %s" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg))
@@ -455,14 +458,15 @@ class MonkeyActions:
 
                 statesForScreenshots = self.gameStateHistory[max(-4,-size):-1]
                 for i,state in enumerate(statesForScreenshots):
-                        screenshotFilename = strftime("death_%Y-%m-%d_%H%M%S_" + str(i) + ".gif")
+                        screenshotFilename = strftime("death_%Y-%m-%d_%H%M%S_" + str(i) + "_at_" + str(state.subState) + ".gif")
                         pathToScreenshot = os.path.join(self.tmpDir, screenshotFilename)
                         state.shot.writeToFile(pathToScreenshot, "GIF")
                         log("Wrote " + pathToScreenshot)
-                        try:
-                            os.system("imgcat " + pathToScreenshot)
-                        except:
-                            pass
+                        if on_mac_os:
+                            try:
+                                os.system("imgcat " + pathToScreenshot)
+                            except:
+                                pass
 
             #log(self.gameStateHistory)
 
