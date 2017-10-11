@@ -452,15 +452,16 @@ class MonkeyActions:
                 self.gameStateHistoryLock.release()
             if size >= 2 and self.gameStateHistory[-2].mainState == GameState.MAINSTATE_INGAME and self.gameStateHistory[-1].mainState == GameState.MAINSTATE_UNKNOWN:
                 log("Died at %d" % (self.gameStateHistory[-2].subState,))
-                for i,state in enumerate(self.gameStateHistory[max(-4,-size):-1]):
-                        screenshotFilename = strftime("death_%Y-%m-%d_%H%M%S_" + str(i) + ".png")
+
+                statesForScreenshots = self.gameStateHistory[max(-4,-size):-1]
+                for i,state in enumerate(statesForScreenshots):
+                        screenshotFilename = strftime("death_%Y-%m-%d_%H%M%S_" + str(i) + ".gif")
                         pathToScreenshot = os.path.join(self.tmpDir, screenshotFilename)
-                        state.shot.writeToFile(pathToScreenshot)
-                        state.shot.writeToFile(pathToScreenshot) # need to write twice to make it work...
+                        state.shot.writeToFile(pathToScreenshot, "GIF")
                         log("Wrote " + pathToScreenshot)
                         try:
                             os.system("imgcat " + pathToScreenshot)
-                        except _:
+                        except:
                             pass
 
             #log(self.gameStateHistory)
