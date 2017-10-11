@@ -95,10 +95,11 @@ class GameState(object):
     MAINSTATE_UNKNOWN  = "main_unknown"
     MAINSTATES = [MAINSTATE_INGAME, MAINSTATE_UNKNOWN]
 
-    def __init__(self, mainState, subState, timestamp):
+    def __init__(self, mainState, subState, timestamp, shot):
         self.mainState = mainState
         self.subState = subState
         self.timestamp = timestamp
+        self.shot = shot
 
     def getMainState(self):
         return self._mainState
@@ -209,11 +210,14 @@ class GameStateDetector:
         shot = self.device.takeSnapshot()
         mainState = self.getMainState(shot)
 
-        return GameState(mainState, self.getSubState(mainState, shot), timestamp)
+        return GameState(mainState, self.getSubState(mainState, shot), timestamp, shot)
 
 
 class MonkeyActions:
     printed = False
+    tmpDir = os.path.join(tempfile.gettempdir(), "ff3_monkey")
+
+    screenshotsToKeep = 10
 
     leftPedal = (250, 232)
     rightPedal = (250, 2304)
@@ -228,6 +232,11 @@ class MonkeyActions:
 
     def __init__(self):
         signal.signal(signal.SIGINT, self.exitGracefully)
+
+        if not os.path.exists(self.tmpDir):
+            os.mkdir(self.tmpDir)
+        log("Tmp dir: %s" % self.tmpDir)
+
         self.readParams()
         #self.startMinitouch()
         self.device = MonkeyRunner.waitForConnection(1, "ce061716ad19601e0d7e")
@@ -300,10 +309,7 @@ class MonkeyActions:
     def screenshot(self):
         shot = self.device.takeSnapshot()
         filename = strftime("%Y-%m-%d_%H%M%S.png")
-        dirPath = os.path.join(tempfile.gettempdir(), "ff3_monkey")
-        pathToFile = os.path.join(dirPath, filename)
-        if not os.path.exists(dirPath):
-            os.mkdir(dirPath)
+        pathToFile = os.path.join(self.tmpDir, filename)
 
         log("Writing screenshot to", pathToFile)
         shot.writeToFile(pathToFile)
@@ -362,12 +368,6 @@ class MonkeyActions:
 
     def testHiirThrottle(self):
         self.hiirThrottle(0.54, 0.25, 0.0, 0.08)
-
-
-    def getMainState(self):
-        self.lastMainState = self.gameStateDetector.getGameState().getMainState()
-        return self.lastMainState
-
 
     def grindOnce(self):
         self.pressCountryside()
@@ -442,14 +442,26 @@ class MonkeyActions:
             newState = self.gameStateDetector.getGameState()
             self.gameStateHistoryLock.acquire()
             self.gameStateHistory.append(newState)
-            self.gameStateHistoryLock.release()
             size = len(self.gameStateHistory)
+            if size > self.screenshotsToKeep:
+                self.gameStateHistory[-self.screenshotsToKeep - 1].shot = None # release memory
+            self.gameStateHistoryLock.release()
             if size > 100:
                 self.gameStateHistoryLock.acquire()
                 self.gameStateHistory = self.gameStateHistory[(size-50):]
                 self.gameStateHistoryLock.release()
             if size >= 2 and self.gameStateHistory[-2].mainState == GameState.MAINSTATE_INGAME and self.gameStateHistory[-1].mainState == GameState.MAINSTATE_UNKNOWN:
                 log("Died at %d" % (self.gameStateHistory[-2].subState,))
+                for i,state in enumerate(self.gameStateHistory[max(-4,-size):-1]):
+                        screenshotFilename = strftime("death_%Y-%m-%d_%H%M%S_" + str(i) + ".png")
+                        pathToScreenshot = os.path.join(self.tmpDir, screenshotFilename)
+                        state.shot.writeToFile(pathToScreenshot)
+                        state.shot.writeToFile(pathToScreenshot) # need to write twice to make it work...
+                        log("Wrote " + pathToScreenshot)
+                        try:
+                            os.system("imgcat " + pathToScreenshot)
+                        except _:
+                            pass
 
             #log(self.gameStateHistory)
 
