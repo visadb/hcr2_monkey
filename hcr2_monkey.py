@@ -151,6 +151,8 @@ class GameStateDetector:
         for cand in range(0, 10):
             subImageDetectionSpec = (self.modelNumbers[cand], rect, 95.0)
             dissimilarity, maxDissimilarity, _ = self.imageDissimilarity(subImageDetectionSpec, shot)
+            #if slot == 0:
+            #    log("Dissimilarity for cand %d: %f" % (cand, dissimilarity))
             if float(dissimilarity)/maxDissimilarity < 0.005:
                 #log("Obvious cand %d for slot %d, %f/%f - %f" % (cand, slot, dissimilarity, maxDissimilarity, float(dissimilarity)/maxDissimilarity))
                 return cand
@@ -314,7 +316,7 @@ class MonkeyActions:
         filename = strftime("%Y-%m-%d_%H%M%S.png")
         pathToFile = os.path.join(self.tmpDir, filename)
 
-        log("Writing screenshot to", pathToFile)
+        log("Writing screenshot to " + pathToFile)
         shot.writeToFile(pathToFile)
 
     def touch_down(self, contact, coords):
@@ -449,6 +451,7 @@ class MonkeyActions:
             if size > self.screenshotsToKeep:
                 self.gameStateHistory[-self.screenshotsToKeep - 1].shot = None # release memory
             self.gameStateHistoryLock.release()
+            #log(self.gameStateHistory[-1].subState)
             if size > 100:
                 self.gameStateHistoryLock.acquire()
                 self.gameStateHistory = self.gameStateHistory[(size-50):]
@@ -468,7 +471,6 @@ class MonkeyActions:
                             except:
                                 pass
 
-            #log(self.gameStateHistory)
 
     def startReadingGameState(self):
         Thread(target=self.readGameStateForever).start()
