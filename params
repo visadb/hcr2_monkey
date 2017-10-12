@@ -1,6 +1,6 @@
 3.2, 1.2, 4.0
    0, 0.20, 0.02, 0.000, 0.00
-  80, 0.10, 0.03, 0.042, 0.40 # first bridge coming up
+  75, 0.10, 0.03, 0.042, 0.40 # first bridge coming up
  150, 0.90, 0.03, 0.085, 0.15 # after first bridge
  340, 0.80, 0.03, 0.089, 0.20 # third bridge coming up
  400, 0.95, 0.03, 0.085, 0.15 # after bridge, risk of wheeling
